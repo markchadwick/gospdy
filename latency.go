@@ -1,11 +1,10 @@
 package spdy
 
 import (
-	"time"
-	"sync"
 	"io"
-	"http"
-	"os"
+	"net/http"
+	"sync"
+	"time"
 )
 
 type writeFlusher interface {
@@ -15,13 +14,13 @@ type writeFlusher interface {
 
 type maxLatencyWriter struct {
 	dst     writeFlusher
-	latency int64 // nanos
+	latency time.Duration
 
 	lk   sync.Mutex // protects init of done, as well Write + Flush
 	done chan bool
 }
 
-func MaxLatencyWriter(w io.Writer, latency int64) io.Writer {
+func MaxLatencyWriter(w io.Writer, latency time.Duration) io.Writer {
 	if latency <= 0 {
 		return w
 	}
@@ -53,7 +52,7 @@ func (m *maxLatencyWriter) flushLoop() {
 	panic("unreached")
 }
 
-func (m *maxLatencyWriter) Write(p []byte) (n int, err os.Error) {
+func (m *maxLatencyWriter) Write(p []byte) (n int, err error) {
 	m.lk.Lock()
 	defer m.lk.Unlock()
 	if m.done == nil {
@@ -72,7 +71,7 @@ type maxLatencyReader struct {
 	src io.Reader
 }
 
-func MaxLatencyReader(r io.Reader, latency int64) io.Reader {
+func MaxLatencyReader(r io.Reader, latency time.Duration) io.Reader {
 	if latency <= 0 {
 		return r
 	}
@@ -83,11 +82,11 @@ func MaxLatencyReader(r io.Reader, latency int64) io.Reader {
 	return l
 }
 
-func (m *maxLatencyReader) Read(b []byte) (n int, err os.Error) {
+func (m *maxLatencyReader) Read(b []byte) (n int, err error) {
 	return m.src.Read(b)
 }
 
-func (m *maxLatencyReader) WriteTo(w io.Writer) (n int64, err os.Error) {
+func (m *maxLatencyReader) WriteTo(w io.Writer) (n int64, err error) {
 	if dst, ok := w.(writeFlusher); ok {
 		m.w.dst = dst
 		return io.Copy(&m.w, m.src)

@@ -2,11 +2,10 @@ package spdy
 
 import (
 	"bytes"
-	"http"
-	"os"
+	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
-	"url"
 )
 
 type tester struct {
@@ -21,7 +20,7 @@ func newTester(t *testing.T) *tester {
 	return &tester{t: t}
 }
 
-func (s *tester) test(f frame, parse func() (frame, os.Error)) {
+func (s *tester) test(f frame, parse func() (frame, error)) {
 	s.buf.Reset()
 	if err := f.WriteFrame(&s.buf, &s.zip); err != nil {
 		s.t.Fatalf("%v %+v", err, f)
@@ -110,12 +109,12 @@ func TestSynStreamFrame(t *testing.T) {
 	s := newTester(t)
 	for _, f := range requests {
 		f.Version = 2
-		s.test(&f, func() (frame, os.Error) {
+		s.test(&f, func() (frame, error) {
 			return parseSynStream(s.data, &s.unzip)
 		})
 
 		f.Version = 3
-		s.test(&f, func() (frame, os.Error) {
+		s.test(&f, func() (frame, error) {
 			return parseSynStream(s.data, &s.unzip)
 		})
 	}
@@ -125,12 +124,12 @@ func TestSynReplyFrame(t *testing.T) {
 	s := newTester(t)
 	for _, f := range replies {
 		f.Version = 2
-		s.test(&f, func() (frame, os.Error) {
+		s.test(&f, func() (frame, error) {
 			return parseSynReply(s.data, &s.unzip)
 		})
 
 		f.Version = 3
-		s.test(&f, func() (frame, os.Error) {
+		s.test(&f, func() (frame, error) {
 			return parseSynReply(s.data, &s.unzip)
 		})
 	}
@@ -140,12 +139,12 @@ func TestHeadersFrame(t *testing.T) {
 	s := newTester(t)
 	for _, f := range headers {
 		f.Version = 2
-		s.test(&f, func() (frame, os.Error) {
+		s.test(&f, func() (frame, error) {
 			return parseHeaders(s.data, &s.unzip)
 		})
 
 		f.Version = 3
-		s.test(&f, func() (frame, os.Error) {
+		s.test(&f, func() (frame, error) {
 			return parseHeaders(s.data, &s.unzip)
 		})
 	}

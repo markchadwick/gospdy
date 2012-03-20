@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 )
 
 type connLogger struct {
@@ -16,7 +15,7 @@ func NewConnLogger(prefix string, c net.Conn) net.Conn {
 	return &connLogger{c, prefix}
 }
 
-func (l *connLogger) Close() (err os.Error) {
+func (l *connLogger) Close() (err error) {
 	err = l.Conn.Close()
 	if err != nil {
 		log.Printf("%s Close: %v", l.prefix, err)
@@ -26,7 +25,7 @@ func (l *connLogger) Close() (err os.Error) {
 	return
 }
 
-func (l *connLogger) Read(p []byte) (n int, err os.Error) {
+func (l *connLogger) Read(p []byte) (n int, err error) {
 	n, err = l.Conn.Read(p)
 	if err != nil {
 		log.Printf("%s Read %s: %v", l.prefix, p[0:n], err)
@@ -36,7 +35,7 @@ func (l *connLogger) Read(p []byte) (n int, err os.Error) {
 	return
 }
 
-func (l *connLogger) Write(p []byte) (n int, err os.Error) {
+func (l *connLogger) Write(p []byte) (n int, err error) {
 	n, err = l.Conn.Write(p)
 	if err != nil {
 		log.Printf("%s Write %s: %v", l.prefix, p[0:n], err)
@@ -55,7 +54,7 @@ func NewListenLogger(prefix string, c net.Listener) net.Listener {
 	return &listenLogger{c, prefix}
 }
 
-func (l *listenLogger) Accept() (c net.Conn, err os.Error) {
+func (l *listenLogger) Accept() (c net.Conn, err error) {
 	c, err = l.Listener.Accept()
 	if err != nil {
 		log.Printf("%s Accept: %v", l.prefix, err)
